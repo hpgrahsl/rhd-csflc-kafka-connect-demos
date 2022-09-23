@@ -1,0 +1,79 @@
+version: '2.1'
+services:
+  zookeeper:
+    image: debezium/zookeeper:1.8.1.Final
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+    networks:
+      - demo-network
+  kafka:
+    image: debezium/kafka:1.8.1.Final
+    ports:
+     - 9092:9092
+     - 29092:29092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+    networks:
+      - demo-network
+  connect:
+    image: debezium/connect:1.8.1.Final
+    ports:
+      - 8083:8083
+    links:
+      - kafka
+    volumes:
+      - ./connectors/secrets:/secrets
+      - ./connectors/smt:/kafka/connect/debezium-connector-mysql/smt
+      - ./connectors/mongodb-kafka-connect-mongodb-1.7.0:/kafka/connect/mongodb-kafka-connect-mongodb-1.7.0
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+      - CONNECT_CONFIG_PROVIDERS=file
+      - CONNECT_CONFIG_PROVIDERS_FILE_CLASS=org.apache.kafka.common.config.provider.FileConfigProvider
+    networks:
+      - demo-network
+  mysql:
+    image: debezium/example-mysql:1.8.1.Final
+    ports:
+     - 3306:3306
+    environment:
+     - MYSQL_ROOT_PASSWORD=debezium
+     - MYSQL_USER=mysqluser
+     - MYSQL_PASSWORD=mysqlpw
+    networks:
+      - demo-network
+  mongodb-rs-setup:
+    container_name: mongodb-rs-setup
+    image: mongo:5.0.6
+    restart: on-failure
+    volumes:
+      - ./docker/.config/mongodb/mongosetup.sh:/scripts/mongosetup.sh
+    entrypoint: ["bash", "/scripts/mongosetup.sh"]
+    depends_on:
+      - mongodb
+    networks:
+      - demo-network  
+  mongodb:
+    image: mongo:5.0.6
+    restart: on-failure
+    command: ["--port", "27017", "--replSet", "rs0", "--bind_ip_all"]
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    networks:
+      - demo-network
+    healthcheck:
+      test: echo 'rs.status().ok' | mongo admin --port 27017 --quiet | grep 1
+      interval: 30s
+      start_period: 60s
+networks:
+  demo-network:
+    name: uc1-network

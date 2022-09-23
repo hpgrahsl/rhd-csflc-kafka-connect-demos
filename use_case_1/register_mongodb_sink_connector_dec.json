@@ -1,0 +1,29 @@
+{
+    "name": "mongodb-sink-dec-001",
+    "config": {
+        "topics": "mysqlhost.inventory.addresses",
+        "connector.class": "com.mongodb.kafka.connect.MongoSinkConnector",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable":false,
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable":false,
+        "tasks.max": "1",
+        "connection.uri":"mongodb://mongodb:27017",
+        "database":"kryptonite",
+        "document.id.strategy":"com.mongodb.kafka.connect.sink.processor.id.strategy.ProvidedInKeyStrategy",
+        "delete.on.null.values": true,
+        "transforms": "createid,removefield,decipher",
+        "transforms.createid.type": "org.apache.kafka.connect.transforms.ReplaceField$Key",
+        "transforms.createid.renames": "id:_id",
+        "transforms.removefield.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+        "transforms.removefield.blacklist": "id",
+        "transforms.decipher.type": "com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherField$Value",
+        "transforms.decipher.cipher_mode": "DECRYPT",
+        "transforms.decipher.cipher_data_keys": "${file:/secrets/classified.properties:cipher_data_keys}",
+        "transforms.decipher.field_config": "[{\"name\":\"street\"}]",
+        "transforms.decipher.predicate":"isTombstone",
+        "transforms.decipher.negate":true,
+        "predicates": "isTombstone",
+        "predicates.isTombstone.type": "org.apache.kafka.connect.transforms.predicates.RecordIsTombstone"
+    }
+}
