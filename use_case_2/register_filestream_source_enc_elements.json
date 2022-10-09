@@ -1,0 +1,20 @@
+{
+    "name": "filesource-enc-002",
+    "config": {
+        "connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": false,
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": false,
+        "file":"/tmp/kafka-connect/data/sample_data.txt",
+        "topic":"personal-data-enc-elements",
+        "transforms":"string2json,cipher",
+        "transforms.string2json.type": "com.github.hpgrahsl.kafka.connect.transforms.kryptonite.util.JsonStringReader$Value",
+        "transforms.cipher.type": "com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherField$Value",
+        "transforms.cipher.cipher_mode": "ENCRYPT",
+        "transforms.cipher.cipher_data_keys": "${file:/secrets/classified.properties:cipher_data_keys}",
+        "transforms.cipher.cipher_data_key_identifier": "my-demo-secret-key-123",
+        "transforms.cipher.field_config": "[{\"name\":\"personal\"},{\"name\":\"knownResidences\",\"keyId\":\"my-demo-secret-key-987\"}]",
+        "transforms.cipher.field_mode": "ELEMENT"
+    }
+}

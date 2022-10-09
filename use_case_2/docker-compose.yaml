@@ -1,0 +1,73 @@
+version: '2.1'
+services:
+  zookeeper:
+    image: debezium/zookeeper:1.8.1.Final
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+    networks:
+      - demo-network
+  kafka:
+    image: debezium/kafka:1.8.1.Final
+    ports:
+     - 9092:9092
+     - 29092:29092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+    networks:
+      - demo-network
+  connect:
+    image: debezium/connect:1.8.1.Final
+    ports:
+      - 8083:8083
+    links:
+      - kafka
+    volumes:
+      - ./connectors/secrets:/secrets
+      - ./connectors/smt:/kafka/connect/debezium-connector-mysql/smt
+      - ./connectors/camel-minio-kafka-connector-0.11.0-package:/kafka/connect/camel-minio-kafka-connector-0.11.0-package
+      - ./data/connect:/tmp/kafka-connect/data
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+      - CONNECT_CONFIG_PROVIDERS=file
+      - CONNECT_CONFIG_PROVIDERS_FILE_CLASS=org.apache.kafka.common.config.provider.FileConfigProvider
+    networks:
+      - demo-network
+  minio:
+    image: quay.io/minio/minio:RELEASE.2021-11-09T03-21-45Z
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./data/minio:/data
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=minio12345
+    networks:
+      - demo-network
+  minio-bucket-init:
+    image: quay.io/minio/mc:RELEASE.2021-11-05T10-05-06Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      /usr/bin/mc alias set myminio http://minio:9000 admin minio12345;
+      /usr/bin/mc mb myminio/kafka-connect-kryptonite-elements;
+      /usr/bin/mc policy set public myminio/kafka-connect-kryptonite-elements;
+      /usr/bin/mc mb myminio/kafka-connect-kryptonite-objects;
+      /usr/bin/mc policy set public myminio/kafka-connect-kryptonite-objects;
+      "
+    networks:
+      - demo-network
+networks:
+  demo-network:
+    name: uc2-network

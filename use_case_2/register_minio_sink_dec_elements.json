@@ -1,0 +1,22 @@
+{
+    "name": "minio-s3-sink-dec-002",
+    "config": {
+        "connector.class":"org.apache.camel.kafkaconnector.minio.CamelMinioSinkConnector",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": false,
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": false,
+        "topics":"personal-data-enc-elements",
+        "camel.sink.path.bucketName":"kafka-connect-kryptonite-elements",
+        "camel.sink.endpoint.endpoint":"http://minio:9000",
+        "camel.sink.endpoint.autoCreateBucket":true,
+        "camel.sink.endpoint.keyName":"${date:now:yyyyMMdd-HHmmssSSS}-${exchangeId}.json",
+        "transforms": "decipher,json2string",
+        "transforms.decipher.type": "com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherField$Value",
+        "transforms.decipher.cipher_mode": "DECRYPT",
+        "transforms.decipher.cipher_data_keys": "${file:/secrets/classified.properties:cipher_data_keys}",
+        "transforms.decipher.field_config": "[{\"name\":\"personal\"},{\"name\":\"knownResidences\"}]",
+        "transforms.decipher.field_mode": "ELEMENT",
+        "transforms.json2string.type": "com.github.hpgrahsl.kafka.connect.transforms.kryptonite.util.JsonStringWriter$Value"
+    }
+}
