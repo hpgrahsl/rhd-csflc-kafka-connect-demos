@@ -12,5 +12,5 @@ Step by step instructions how to run the first demo scenario can be found in the
 
 #### Use Case 2:
 
-Step by step instructions how to run the second demo scenario can be found in the corresponding [README](use_case_2/README.md). For a detailed discussion about it read [article two](https://developers.redhat.com/) in this series.
+Step by step instructions how to run the second demo scenario can be found in the corresponding [README](use_case_2/README.md). For a detailed discussion about it read [article two](https://developers.redhat.com/articles/2022/10/11/file-based-kafka-connect-scenarios-end-end-encryption) in this series.
 
